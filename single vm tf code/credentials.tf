@@ -1,5 +1,5 @@
 # Admin credential
 locals {
-  username        = "Hriyen"
-  password        = "Admin@12345"
+  username        = "azureuser"
+  password        = "Azureadmin@12345"
 }
