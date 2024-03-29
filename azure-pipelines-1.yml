@@ -1,0 +1,72 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Build
+  displayName: 'Build'
+  jobs:
+  - job: Build
+    displayName: 'Build'
+    steps:
+    - task: TerraformInstaller@1
+      displayName: Terraform installer
+      inputs:
+        terraformVersion: 'latest'
+    - task: TerraformTaskV4@4
+      displayName: Terraform Init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/single vm tf code'
+        commandOptions: '-reconfigure'
+        backendServiceArm: 'Free Trial(10)(21fb298c-8b2d-4d34-971a-9b99a2af713b)'
+        backendAzureRmResourceGroupName: 'app-grp'
+        backendAzureRmStorageAccountName: 'narstorageacc01'
+        backendAzureRmContainerName: 'data-container'
+        backendAzureRmKey: 'terraform.tfstate'
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Validate
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/single vm tf code'
+    
+    - task: TerraformTaskV4@4
+      displayName: Terraform format
+      inputs:
+        provider: 'azurerm'
+        command: 'custom'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/single vm tf code'
+        customCommand: 'fmt'
+        outputTo: 'console'
+        environmentServiceNameAzureRM: 'Free Trial (21fb298c-8b2d-4d34-971a-9b99a2af713b)'
+    
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/single vm tf code'
+        commandOptions: '-out=tfplan'
+        environmentServiceNameAzureRM: 'Free Trial (21fb298c-8b2d-4d34-971a-9b99a2af713b)'
+    - task: CopyFiles@2
+      displayName: Copy files
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: '**'
+        TargetFolder: '$(build.artifactstagingdirectory)'
+        OverWrite: true
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifacts
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'hriyen-artifact'
+        publishLocation: 'Container'
